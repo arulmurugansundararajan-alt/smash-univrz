@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
           amount: 1500,
           name: member.name,
           phone: member.phone,
-          description: `Membership Renewal – ${member.membershipPlan}`,
+          description: `Membership Renewal – ${member.plan}`,
           referenceId: member._id.toString(),
         }).catch(() => '');
 

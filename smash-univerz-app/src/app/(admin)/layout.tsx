@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import {
   LayoutDashboard,
   Users,
@@ -13,22 +14,34 @@ import {
   X,
   Dumbbell,
   Bell,
+  Tags,
+  ShieldCheck,
+  LogOut,
 } from 'lucide-react';
 import { useState } from 'react';
 
-const navItems = [
-  { href: '/dashboard',   label: 'Dashboard',  icon: LayoutDashboard },
-  { href: '/members',     label: 'Members',     icon: Users },
-  { href: '/students',    label: 'Students',    icon: GraduationCap },
-  { href: '/attendance',  label: 'Attendance',  icon: CalendarCheck },
-  { href: '/tournaments', label: 'Tournaments', icon: Trophy },
-  { href: '/payments',    label: 'Payments',    icon: CreditCard },
-  { href: '/reminders',   label: 'Reminders',   icon: Bell },
+const ALL_NAV = [
+  { href: '/dashboard',   label: 'Dashboard',  icon: LayoutDashboard, adminOnly: true },
+  { href: '/members',     label: 'Members',     icon: Users,           adminOnly: false },
+  { href: '/students',    label: 'Students',    icon: GraduationCap,   adminOnly: false },
+  { href: '/attendance',  label: 'Attendance',  icon: CalendarCheck,   adminOnly: false },
+  { href: '/tournaments', label: 'Tournaments', icon: Trophy,          adminOnly: false },
+  { href: '/payments',    label: 'Payments',    icon: CreditCard,      adminOnly: true },
+  { href: '/plans',       label: 'Plans',       icon: Tags,            adminOnly: true },
+  { href: '/users',       label: 'Users',       icon: ShieldCheck,     adminOnly: true },
+  { href: '/reminders',   label: 'Reminders',   icon: Bell,            adminOnly: true },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { data: session } = useSession();
+
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const name = session?.user?.name ?? 'User';
+  const isAdmin = role === 'admin';
+
+  const navItems = ALL_NAV.filter(n => !n.adminOnly || isAdmin);
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 flex">
@@ -76,8 +89,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-800">
-          <p className="text-xs text-gray-500">Smash Univerz v1.0</p>
+        {/* User info + logout */}
+        <div className="p-4 border-t border-gray-800 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-yellow-400/20 flex items-center justify-center text-yellow-400 font-bold text-sm shrink-0">
+              {name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-white truncate">{name}</p>
+              <p className="text-xs text-gray-500 capitalize">{role ?? 'loading…'}</p>
+            </div>
+          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: '/login' })}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          >
+            <LogOut className="w-4 h-4" /> Sign Out
+          </button>
         </div>
       </aside>
 
@@ -100,11 +128,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Menu className="w-5 h-5" />
           </button>
           <span className="font-semibold text-white capitalize">
-            {navItems.find(n => pathname.startsWith(n.href))?.label ?? 'Admin'}
+            {navItems.find(n => pathname === n.href || pathname.startsWith(n.href + '/'))?.label ?? 'Admin'}
           </span>
           <div className="ml-auto flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center text-gray-900 font-bold text-sm">
-              A
+            {role && (
+              <span className={`text-xs px-2 py-0.5 rounded-full border ${
+                isAdmin ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+              }`}>{role}</span>
+            )}
+            <div className="w-8 h-8 rounded-full bg-yellow-400/20 flex items-center justify-center text-yellow-400 font-bold text-sm">
+              {name.charAt(0).toUpperCase()}
             </div>
           </div>
         </header>

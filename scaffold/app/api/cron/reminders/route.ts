@@ -7,13 +7,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongodb';
 import { Member } from '@/models/Member';
 import { Student } from '@/models/Student';
-import { ScheduledReminder } from '@/models/ScheduledReminder';
 import { createPaymentLink } from '@/lib/razorpay';
 import {
   sendMembershipExpiryReminder,
   sendFeePendingAlert,
 } from '@/lib/whatsapp';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 
 export async function GET(req: NextRequest) {
   // Protect cron endpoint
@@ -42,7 +41,7 @@ export async function GET(req: NextRequest) {
         amount: 1500,   // TODO: lookup from membershipPlans collection
         name: member.name,
         phone: member.phone,
-        description: `${member.plan} Membership Renewal`,
+        description: `${member.membershipPlan} Membership Renewal`,
         referenceId: member._id.toString(),
       });
 
@@ -91,40 +90,5 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── 3. Process any due scheduled reminders ──────────────────────────────────
-  await processScheduledReminders();
-
   return NextResponse.json({ ok: true, ...results });
-}
-
-// ── Process due scheduled reminders (also called by cron) ───────────────────
-async function processScheduledReminders() {
-  const now   = new Date();
-  const d3    = addDays(now, 3);
-  const d7    = addDays(now, 7);
-  const due   = await ScheduledReminder.find({ status: 'scheduled', scheduledAt: { $lte: now } });
-  for (const job of due) {
-    job.status = 'sending';
-    await job.save();
-    let query: Record<string, unknown> = {};
-    if (job.targetGroup === 'all_active')   query = { isActive: true };
-    if (job.targetGroup === 'overdue')      query = { expiryDate: { $lt: now }, isActive: true };
-    if (job.targetGroup === 'expiring_3d')  query = { expiryDate: { $gte: now, $lte: d3 }, isActive: true };
-    if (job.targetGroup === 'expiring_7d')  query = { expiryDate: { $gte: now, $lte: d7 }, isActive: true };
-    const members = await Member.find(query).lean();
-    let sentCount = 0; let failedCount = 0;
-    for (const m of members) {
-      try {
-        const link = await createPaymentLink({ amount: 1500, name: m.name, phone: m.phone, description: 'Membership Renewal', referenceId: m._id.toString() }).catch(() => '');
-        const r = await sendMembershipExpiryReminder(m.phone, m.name, format(m.expiryDate, 'dd MMM yyyy'), link);
-        if (r.success) sentCount++; else failedCount++;
-      } catch { failedCount++; }
-    }
-    job.status      = failedCount === members.length && members.length > 0 ? 'failed' : 'sent';
-    job.sentCount   = sentCount;
-    job.failedCount = failedCount;
-    job.totalCount  = members.length;
-    job.sentAt      = new Date();
-    await job.save();
-  }
 }

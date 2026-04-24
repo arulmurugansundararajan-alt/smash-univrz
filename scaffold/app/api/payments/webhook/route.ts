@@ -8,18 +8,13 @@ import { Member } from '@/models/Member';
 import { Student } from '@/models/Student';
 import { verifyWebhookSignature } from '@/lib/razorpay';
 import { sendPaymentConfirmation } from '@/lib/whatsapp';
-import { format, addMonths, addDays } from 'date-fns';
+import { format, addDays, addMonths } from 'date-fns';
 
-// Compute expiry using "same day next period" logic
-// monthly → same day next month (Jan 31 → Feb 28/29 handled by date-fns)
-// quarterly → same day 3 months later
-// yearly → same day next year
-function computeExpiry(plan: string, from: Date = new Date()): Date {
-  if (plan === 'monthly')   return addMonths(from, 1);
-  if (plan === 'quarterly') return addMonths(from, 3);
-  if (plan === 'yearly')    return addMonths(from, 12);
-  return addDays(from, 30); // fallback
-}
+const PLAN_DURATION: Record<string, number> = {
+  monthly: 30,
+  quarterly: 90,
+  yearly: 365,
+};
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
@@ -49,9 +44,9 @@ export async function POST(req: NextRequest) {
     if (paymentDoc.entityType === 'member') {
       const member = await Member.findById(paymentDoc.entityId);
       if (member) {
-        const paidAt = paymentDoc.paidAt ?? new Date();
+        const days = PLAN_DURATION[member.membershipPlan] ?? 30;
         member.paymentStatus = 'paid';
-        member.expiryDate = computeExpiry(member.plan, paidAt);
+        member.expiryDate = addDays(new Date(), days);
         await member.save();
 
         await sendPaymentConfirmation(
