@@ -8,6 +8,7 @@ const ADMIN_ONLY_PATHS = ['/dashboard', '/payments', '/plans', '/users', '/remin
 const PUBLIC_PATHS = [
   '/login',
   '/tv/',
+  '/mobile/',
   '/api/auth',
   '/api/tournaments',
   '/api/payments/webhook',

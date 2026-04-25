@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Trophy, Plus, Tv, Settings, Loader2, X, Check,
-  Swords, ShieldCheck, AlertCircle,
+  Swords, ShieldCheck, AlertCircle, Smartphone,
 } from 'lucide-react';
 
 interface Tournament {
@@ -119,7 +119,11 @@ export default function TournamentsPage() {
                 </Link>
                 <a href={`/tv/${t._id}`} target="_blank" rel="noopener noreferrer"
                   className="flex items-center gap-1.5 px-3 py-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-lg text-xs hover:bg-blue-500/20">
-                  <Tv className="w-3.5 h-3.5" /> TV Mode
+                  <Tv className="w-3.5 h-3.5" /> TV
+                </a>
+                <a href={`/mobile/${t._id}`} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-green-500/10 text-green-400 border border-green-500/20 rounded-lg text-xs hover:bg-green-500/20">
+                  <Smartphone className="w-3.5 h-3.5" /> Mobile
                 </a>
                 {t.status === 'completed' && (
                   <Link href={`/tournaments/${t._id}/report`}
