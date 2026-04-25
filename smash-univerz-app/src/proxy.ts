@@ -27,7 +27,12 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET });
+  // NextAuth v5 uses 'authjs.session-token' (HTTP) or '__Secure-authjs.session-token' (HTTPS)
+  const isSecure = req.nextUrl.protocol === 'https:';
+  const cookieName = isSecure ? '__Secure-authjs.session-token' : 'authjs.session-token';
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+
+  const token = await getToken({ req, secret, cookieName });
 
   // Not logged in → redirect to login
   if (!token) {
