@@ -33,8 +33,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (body.email !== undefined) update.email = body.email?.trim() || '';
     if (body.plan && PLAN_MONTHS[body.plan]) {
       update.plan = body.plan;
-      // Recalculate expiry from today when plan changes
-      const start = new Date();
+      // Use provided startDate or today
+      const start = body.startDate ? new Date(body.startDate) : new Date();
       update.startDate = start;
       update.expiryDate = addMonths(start, PLAN_MONTHS[body.plan]);
     }

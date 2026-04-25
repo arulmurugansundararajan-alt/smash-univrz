@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan. Use monthly, half_yearly or yearly' }, { status: 422 });
     }
 
-    const startDate = new Date();
+    const startDate = body.startDate ? new Date(body.startDate) : new Date();
     const expiryDate = addMonths(startDate, PLAN_MONTHS[plan]);
 
     const member = await Member.create({

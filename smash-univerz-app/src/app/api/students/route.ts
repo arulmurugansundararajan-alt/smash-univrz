@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
     const body = await req.json();
-    const { name, phone, parentPhone, email, age, batchName, coachName, level, feeAmount } = body;
+    const { name, phone, parentPhone, email, age, batchName, coachName, level, feeAmount, enrollmentDate: enrollmentDateRaw } = body;
 
     if (!name || !phone || !batchName || !feeAmount) {
       return NextResponse.json({ error: 'name, phone, batchName and feeAmount are required' }, { status: 422 });
     }
 
-    const enrollmentDate = new Date();
+    const enrollmentDate = enrollmentDateRaw ? new Date(enrollmentDateRaw) : new Date();
     const feeDueDate = addMonths(enrollmentDate, 1); // due next month
 
     const student = await Student.create({
@@ -55,6 +55,7 @@ export async function POST(req: NextRequest) {
       batchName: batchName.trim(),
       coachName: coachName?.trim() || '',
       level: level || 'beginner',
+      enrollmentDate,
       feeAmount: Number(feeAmount),
       feeDueDate,
       feeStatus: 'pending',

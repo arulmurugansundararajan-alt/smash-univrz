@@ -11,6 +11,7 @@ interface Member {
   email?: string;
   plan: string;
   paymentStatus: string;
+  startDate: string;
   expiryDate: string;
   paidAmount?: number;
   isActive: boolean;
@@ -24,7 +25,8 @@ const STATUS_BADGE: Record<string, string> = {
   overdue: 'bg-red-500/10 text-red-400 border-red-500/20',
 };
 
-const EMPTY_FORM = { name: '', phone: '', email: '', plan: 'monthly' };
+const today = () => new Date().toISOString().split('T')[0];
+const EMPTY_FORM = { name: '', phone: '', email: '', plan: 'monthly', joinDate: today() };
 
 export default function MembersPage() {
   const [members, setMembers]         = useState<Member[]>([]);
@@ -65,7 +67,7 @@ export default function MembersPage() {
     const res = await fetch('/api/members', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, startDate: form.joinDate }),
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error); setSaving(false); return; }
@@ -80,7 +82,7 @@ export default function MembersPage() {
     const res = await fetch(`/api/members/${editMember._id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, startDate: form.joinDate }),
     });
     const data = await res.json();
     if (!res.ok) { setError(data.error); setSaving(false); return; }
@@ -106,7 +108,7 @@ export default function MembersPage() {
   }
 
   function openEdit(m: Member) {
-    setForm({ name: m.name, phone: m.phone, email: m.email ?? '', plan: m.plan });
+    setForm({ name: m.name, phone: m.phone, email: m.email ?? '', plan: m.plan, joinDate: m.startDate ? m.startDate.split('T')[0] : today() });
     setEditMember(m);
     setError('');
   }
@@ -290,6 +292,15 @@ export default function MembersPage() {
                     <option key={p.slug} value={p.slug}>{p.name} – ₹{p.price.toLocaleString('en-IN')}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Date of Joining</label>
+                <input
+                  type="date"
+                  value={form.joinDate}
+                  onChange={(e) => setForm(f => ({ ...f, joinDate: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-400 [color-scheme:dark]"
+                />
               </div>
             </div>
             <div className="flex gap-3 pt-2">

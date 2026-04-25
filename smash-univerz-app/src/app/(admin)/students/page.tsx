@@ -12,6 +12,7 @@ interface Student {
   batchName: string;
   coachName?: string;
   level: string;
+  enrollmentDate: string;
   feeAmount: number;
   feeStatus: string;
   feeDueDate: string;
@@ -31,9 +32,10 @@ const LEVEL_BADGE: Record<string, string> = {
   advanced:     'bg-orange-500/10 text-orange-400',
 };
 
+const today = () => new Date().toISOString().split('T')[0];
 const EMPTY_FORM = {
   name: '', phone: '', parentPhone: '', batchName: '', coachName: '',
-  level: 'beginner', feeAmount: '2500',
+  level: 'beginner', feeAmount: '2500', enrollmentDate: today(),
 };
 
 export default function StudentsPage() {
@@ -113,6 +115,7 @@ export default function StudentsPage() {
       name: s.name, phone: s.phone, parentPhone: s.parentPhone ?? '',
       batchName: s.batchName, coachName: s.coachName ?? '',
       level: s.level, feeAmount: String(s.feeAmount),
+      enrollmentDate: s.enrollmentDate ? s.enrollmentDate.split('T')[0] : today(),
     });
     setEditStudent(s); setError('');
   }
@@ -267,6 +270,15 @@ export default function StudentsPage() {
                   <option value="intermediate">Intermediate</option>
                   <option value="advanced">Advanced</option>
                 </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Date of Joining</label>
+                <input
+                  type="date"
+                  value={form.enrollmentDate}
+                  onChange={(e) => setForm(f => ({ ...f, enrollmentDate: e.target.value }))}
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-400 [color-scheme:dark]"
+                />
               </div>
             </div>
             <div className="flex gap-3 pt-2">
